@@ -5,12 +5,14 @@ Provides REST API for querying K Fund regulations.
 """
 
 import os
+import secrets
 from pathlib import Path
 from contextlib import asynccontextmanager
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Depends, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, HTMLResponse
+from fastapi.security import HTTPBasic, HTTPBasicCredentials
 from pydantic import BaseModel
 import chromadb
 from openai import OpenAI
@@ -18,6 +20,24 @@ from dotenv import load_dotenv
 from typing import List, Dict
 
 load_dotenv()
+
+# Basic Auth
+security = HTTPBasic()
+AUTH_USER = os.getenv("AUTH_USER", "admin")
+AUTH_PASS = os.getenv("AUTH_PASS", "BAdos2025!")
+
+
+def verify_credentials(credentials: HTTPBasicCredentials = Depends(security)):
+    """Verify basic auth credentials."""
+    correct_user = secrets.compare_digest(credentials.username, AUTH_USER)
+    correct_pass = secrets.compare_digest(credentials.password, AUTH_PASS)
+    if not (correct_user and correct_pass):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid credentials",
+            headers={"WWW-Authenticate": "Basic"},
+        )
+    return credentials.username
 
 # Initialize clients
 openai_client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
@@ -156,7 +176,7 @@ class QueryResponse(BaseModel):
     confidence: str
 
 @app.get("/")
-def root():
+def root(username: str = Depends(verify_credentials)):
     """Serve the main index.html page."""
     index_path = Path(__file__).parent / "index.html"
     if index_path.exists():
@@ -452,17 +472,17 @@ static_path = Path(__file__).parent / "static"
 if static_path.exists():
     app.mount("/static", StaticFiles(directory=str(static_path)), name="static")
 
-# Serve HTML pages
+# Serve HTML pages (protected)
 @app.get("/index.html")
-def serve_index():
+def serve_index(username: str = Depends(verify_credentials)):
     return FileResponse(Path(__file__).parent / "index.html")
 
 @app.get("/search.html")
-def serve_search():
+def serve_search(username: str = Depends(verify_credentials)):
     return FileResponse(Path(__file__).parent / "search.html")
 
 @app.get("/allocation.html")
-def serve_allocation():
+def serve_allocation(username: str = Depends(verify_credentials)):
     return FileResponse(Path(__file__).parent / "allocation.html")
 
 
