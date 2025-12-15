@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>K Fund Event Allocation - U.S. Department of State</title>
+    <link rel="stylesheet" href="static/styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Source+Sans+Pro:wght@400;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <!-- Header -->
+    <header class="usa-header">
+        <div class="container">
+            <div class="usa-logo">
+                <img src="static/state-dept-seal.svg" alt="U.S. Department of State" style="height: 85px; margin-right: 1rem;">
+                <img src="static/ba-logo.png" alt="Booz Allen Hamilton" style="height: 85px; margin-right: 1.5rem;">
+                <div class="usa-logo-text">
+                    <a href="index.html" class="site-title">K Fund Event Allocation</a>
+                    <span class="site-subtitle">U.S. Department of State</span>
+                </div>
+            </div>
+            <nav class="usa-nav">
+                <a href="index.html">Home</a>
+                <a href="search.html">Search Guidelines</a>
+                <a href="allocation.html" class="active">Event Allocation</a>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="usa-hero" style="padding: 2rem;">
+        <div class="container">
+            <h1 style="font-size: 2rem;">K Fund Event Allocation Tool</h1>
+            <p style="font-size: 1.1rem;">Automated classification of K Fund allowability for State Department representational events</p>
+        </div>
+    </section>
+
+    <!-- Main Content -->
+    <main class="usa-section">
+        <div class="container">
+            
+            <!-- Overview Alert -->
+            <div class="usa-alert usa-alert-info">
+                <strong>Purpose:</strong> This tool classifies invoice line items for State Department representational events, determining which expenses are allowable under the K Fund (EDCS - Emergencies in the Diplomatic and Consular Service) per 22 U.S.C. § 2671.
+            </div>
+
+            <!-- Upload Section -->
+            <div class="search-container" style="margin-top: 2rem;">
+                <h2 style="color: var(--primary); margin-bottom: 1.5rem;">Upload Event Documents</h2>
+                
+                <div class="usa-form-group">
+                    <label class="usa-label">Event Information</label>
+                    <input type="text" class="usa-textarea" style="min-height: auto; margin-bottom: 1rem;" placeholder="Event Name" id="eventName">
+                    <input type="date" class="usa-textarea" style="min-height: auto; margin-bottom: 1rem;" id="eventDate">
+                    <input type="number" class="usa-textarea" style="min-height: auto; margin-bottom: 1rem;" placeholder="Number of Foreign Guests" id="foreignGuests">
+                    <input type="number" class="usa-textarea" style="min-height: auto; margin-bottom: 1rem;" placeholder="Total Guests" id="totalGuests">
+                </div>
+
+                <!-- Manual Line Item Entry -->
+                <div class="usa-form-group" style="margin-top: 1.5rem;">
+                    <label class="usa-label">📝 Add Line Items Manually</label>
+                    <div id="lineItemsInput">
+                        <div class="line-item-row" style="display: flex; gap: 0.5rem; margin-bottom: 0.5rem;">
+                            <input type="text" class="usa-textarea line-item-desc" style="min-height: auto; flex: 3;" placeholder="Description (e.g., Catering for reception)">
+                            <input type="number" class="usa-textarea line-item-cost" style="min-height: auto; flex: 1;" placeholder="Cost ($)">
+                            <button class="usa-button usa-button-secondary" style="padding: 0.5rem;" onclick="removeLineItem(this)">✕</button>
+                        </div>
+                    </div>
+                    <button class="usa-button usa-button-secondary" style="margin-top: 0.5rem;" onclick="addLineItem()">
+                        + Add Line Item
+                    </button>
+                </div>
+
+                <div style="display: flex; gap: 1rem; margin-top: 1.5rem;">
+                    <button class="usa-button" onclick="processAllocation()" id="processBtn">
+                        🤖 Classify with AI
+                    </button>
+
+                    <button class="usa-button" onclick="loadSampleData()" id="loadSampleBtn" style="background-color: #e52207; border-color: #e52207;">
+                        📋 Load Sample Event
+                    </button>
+                </div>
+                
+                <div id="loadingIndicator" style="display: none; margin-top: 1rem; padding: 1rem; background: #e7f6f8; border-radius: 8px; text-align: center;">
+                    <div class="usa-spinner" style="margin: 0 auto;"></div>
+                    <p style="margin-top: 0.5rem; color: var(--primary); font-weight: 600;">AI is analyzing your line items...</p>
+                </div>
+            </div>
+
+            <!-- Results Section -->
+            <div id="results" class="result-container" style="margin-top: 2rem;">
+                
+                <!-- Allocation Summary -->
+                <div class="answer-section">
+                    <h3>K Fund Allocation Summary</h3>
+                    <div id="allocationSummary"></div>
+                </div>
+
+                <!-- Line Items Table -->
+                <div style="margin-bottom: 2rem;">
+                    <h3 style="color: var(--primary); margin-bottom: 1rem;">Line Item Classification</h3>
+                    <p style="margin-bottom: 1rem; color: var(--base-dark);">Click on any line item to see why it is or isn't allowable under K Fund.</p>
+                    <div id="lineItemsTable"></div>
+                </div>
+
+                <!-- Legal Review Items -->
+                <div id="legalReview" style="display: none;">
+                    <div class="usa-alert" style="background-color: #fff3cd; border-color: var(--warning);">
+                        <strong>⚖️ Legal Review Required</strong>
+                        <p>The following items require Legal Adviser review for K Fund allowability determination:</p>
+                    </div>
+                    <div id="legalItems"></div>
+                </div>
+
+                <!-- Certifying Officer Statement -->
+                <div class="citations-section">
+                    <h4>🛡️ Certifying Officer Protection Statement</h4>
+                    <div class="citation-item">
+                        <p style="font-style: italic; line-height: 1.8;">
+                            "This certification relies on the K Fund allowability determination based on 22 U.S.C. § 2671 and related authorities. 
+                            Certification is protected under 31 U.S.C. § 3528 when relying on Legal Adviser determinations."
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Action Buttons -->
+                <div style="margin-top: 2rem; display: flex; gap: 1rem;">
+                    <button class="usa-button" onclick="downloadAllocation()">
+                        Download K Fund Report
+                    </button>
+                    <button class="usa-button usa-button-secondary" onclick="routeToLegal()">
+                        Route to Legal Adviser
+                    </button>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <!-- Why Allowable Modal -->
+    <div id="allowableModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <span class="modal-close" onclick="closeModal()">&times;</span>
+            <h3 id="modalTitle">Why This Is Allowable</h3>
+            <div id="modalBody"></div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="usa-footer">
+        <div class="container">
+            <p><strong>K Fund Event Allocation Tool</strong></p>
+            <p>U.S. Department of State | CGFS – K Fund (EDCS) Appropriation</p>
+        </div>
+    </footer>
+
+    <script src="static/allocation.js"></script>
+
+    <style>
+        .modal {
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .modal-content {
+            background: white;
+            padding: 2rem;
+            border-radius: 8px;
+            max-width: 600px;
+            max-height: 80vh;
+            overflow-y: auto;
+            position: relative;
+        }
+        .modal-close {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: var(--base-dark);
+        }
+        .modal-close:hover {
+            color: var(--primary);
+        }
+        .clickable-row {
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        .clickable-row:hover {
+            background-color: #e7f6f8 !important;
+        }
+        .regulation-text {
+            background: var(--base-lightest);
+            padding: 1rem;
+            border-left: 4px solid var(--primary);
+            margin: 1rem 0;
+            font-style: italic;
+        }
+    </style>
+</body>
+</html>

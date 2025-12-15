@@ -1,0 +1,713 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>K Fund AI Search - U.S. Department of State</title>
+    <link rel="stylesheet" href="static/styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Source+Sans+Pro:wght@400;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        /* Search Page Specific Styles - Light Mode */
+        .search-hero {
+            background: linear-gradient(135deg, #002868 0%, #1a4480 100%);
+            color: white;
+            padding: 3rem 2rem;
+            text-align: center;
+        }
+        
+        .hero-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: rgba(255,255,255,0.15);
+            border: 1px solid rgba(255,255,255,0.3);
+            padding: 0.5rem 1rem;
+            border-radius: 50px;
+            font-size: 0.85rem;
+            margin-bottom: 1.5rem;
+        }
+        
+        .hero-badge .dot {
+            width: 8px;
+            height: 8px;
+            background: #00bfa5;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        .search-hero h1 {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+        }
+        
+        .search-hero p {
+            font-size: 1.15rem;
+            opacity: 0.9;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        
+        /* Search Box */
+        .search-box {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            margin: -2rem auto 2rem;
+            max-width: 800px;
+            position: relative;
+            z-index: 10;
+        }
+        
+        .search-textarea {
+            width: 100%;
+            min-height: 100px;
+            padding: 1rem;
+            border: 2px solid #dfe1e2;
+            border-radius: 8px;
+            font-size: 1.05rem;
+            font-family: inherit;
+            resize: none;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        
+        .search-textarea:focus {
+            outline: none;
+            border-color: #005ea2;
+            box-shadow: 0 0 0 3px rgba(0, 94, 162, 0.15);
+        }
+        
+        .search-actions {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 1rem;
+        }
+        
+        .char-count {
+            font-size: 0.85rem;
+            color: #71767a;
+            font-family: 'JetBrains Mono', monospace;
+        }
+        
+        .search-btn {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.875rem 1.5rem;
+            background: linear-gradient(135deg, #005ea2 0%, #1a4480 100%);
+            border: none;
+            border-radius: 8px;
+            color: white;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        
+        .search-btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 94, 162, 0.3);
+        }
+        
+        .search-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        
+        /* Examples */
+        .examples-section {
+            max-width: 800px;
+            margin: 0 auto 2rem;
+            padding: 0 1rem;
+        }
+        
+        .examples-label {
+            font-size: 0.9rem;
+            color: #565c65;
+            margin-bottom: 0.75rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-weight: 600;
+        }
+        
+        .examples-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 0.75rem;
+        }
+        
+        .example-btn {
+            padding: 0.75rem 1rem;
+            background: white;
+            border: 1px solid #dfe1e2;
+            border-radius: 8px;
+            color: #3d4551;
+            font-size: 0.9rem;
+            text-align: left;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .example-btn:hover {
+            background: #005ea2;
+            color: white;
+            border-color: #005ea2;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 94, 162, 0.2);
+        }
+        
+        /* Loading */
+        .loading-container {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            padding: 4rem 2rem;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        
+        .loading-container.active { display: flex; }
+        
+        .loading-spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid #dfe1e2;
+            border-top-color: #005ea2;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin { to { transform: rotate(360deg); } }
+        
+        .loading-text {
+            margin-top: 1.5rem;
+            color: #3d4551;
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+        
+        .loading-steps {
+            margin-top: 1rem;
+            display: flex;
+            gap: 1.5rem;
+            font-size: 0.85rem;
+            color: #71767a;
+        }
+        
+        .loading-step { display: flex; align-items: center; gap: 0.5rem; }
+        .loading-step.active { color: #005ea2; font-weight: 600; }
+        .loading-step .check { color: #00a91c; }
+        
+        /* Results */
+        .results-container {
+            display: none;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 0 1rem 2rem;
+        }
+        
+        .results-container.active {
+            display: block;
+            animation: fadeIn 0.4s ease;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        /* Answer Card */
+        .answer-card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+            overflow: hidden;
+            margin-bottom: 1.5rem;
+        }
+        
+        .answer-header {
+            padding: 1rem 1.5rem;
+            background: linear-gradient(135deg, rgba(0, 94, 162, 0.08) 0%, transparent 100%);
+            border-bottom: 1px solid #dfe1e2;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .answer-title {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            font-weight: 700;
+            color: #1b1b1b;
+        }
+        
+        .confidence-badge {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.4rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 700;
+        }
+        
+        .confidence-badge.high { background: #e7f4e4; color: #00a91c; }
+        .confidence-badge.medium { background: #fef0c8; color: #936f38; }
+        .confidence-badge.low { background: #f4e3db; color: #d54309; }
+        
+        .confidence-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: currentColor;
+        }
+        
+        .answer-body { padding: 1.5rem; }
+        
+        .answer-text {
+            font-size: 1.05rem;
+            line-height: 1.8;
+            color: #1b1b1b;
+        }
+        
+        .answer-text p { margin-bottom: 1rem; }
+        .answer-text p:last-child { margin-bottom: 0; }
+        
+        /* Markdown Styles */
+        .md-h2 {
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: #005ea2;
+            margin: 1.5rem 0 0.75rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 2px solid #dfe1e2;
+        }
+        
+        .md-h3 {
+            font-size: 1.15rem;
+            font-weight: 700;
+            color: #1a4480;
+            margin: 1.25rem 0 0.5rem;
+        }
+        
+        .md-h4 {
+            font-size: 1.05rem;
+            font-weight: 600;
+            color: #3d4551;
+            margin: 1rem 0 0.5rem;
+        }
+        
+        .md-code {
+            background: #f0f0f0;
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.9em;
+            color: #005ea2;
+        }
+        
+        .md-list-item {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 1rem 1.25rem;
+            margin: 0.75rem 0;
+            border-left: 4px solid #005ea2;
+        }
+        
+        .md-list-title {
+            font-weight: 700;
+            color: #005ea2;
+            margin-bottom: 0.25rem;
+            display: block;
+        }
+        
+        .md-list-desc {
+            color: #3d4551;
+            font-size: 0.95rem;
+        }
+        
+        .md-list-item-simple {
+            padding: 0.5rem 0 0.5rem 1.5rem;
+            position: relative;
+        }
+        
+        .md-list-item-simple::before {
+            content: "•";
+            position: absolute;
+            left: 0.5rem;
+            color: #005ea2;
+            font-weight: bold;
+        }
+        
+        .md-bullet {
+            padding: 0.4rem 0 0.4rem 1.5rem;
+            position: relative;
+        }
+        
+        .md-bullet::before {
+            content: "•";
+            position: absolute;
+            left: 0.5rem;
+            color: #005ea2;
+        }
+        
+        .answer-text strong { color: #1b1b1b; }
+        
+        /* Sources Section */
+        .sources-section {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+            overflow: hidden;
+        }
+        
+        .sources-header {
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid #dfe1e2;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #f8f9fa;
+        }
+        
+        .sources-title {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            font-weight: 700;
+            color: #1b1b1b;
+        }
+        
+        .sources-count {
+            background: #005ea2;
+            color: white;
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+        
+        .source-item {
+            border-bottom: 1px solid #dfe1e2;
+        }
+        
+        .source-item:last-child { border-bottom: none; }
+        
+        .source-header {
+            padding: 1rem 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        
+        .source-header:hover { background: #f8f9fa; }
+        
+        .source-info {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        
+        .source-number {
+            width: 28px;
+            height: 28px;
+            background: #005ea2;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: white;
+        }
+        
+        .source-name { font-weight: 600; color: #1b1b1b; }
+        
+        .source-type {
+            font-size: 0.8rem;
+            color: white;
+            background: #1a4480;
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            font-weight: 600;
+        }
+        
+        .source-toggle {
+            color: #71767a;
+            transition: transform 0.2s;
+        }
+        
+        .source-item.expanded .source-toggle { transform: rotate(180deg); }
+        
+        .source-content {
+            display: none;
+            padding: 0 1.5rem 1.5rem;
+        }
+        
+        .source-item.expanded .source-content { display: block; }
+        
+        .source-text {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 1.25rem;
+            font-size: 0.95rem;
+            line-height: 1.7;
+            color: #3d4551;
+            border-left: 4px solid #005ea2;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        
+        .source-text h2, .source-text h3, .source-text h4 {
+            color: #005ea2;
+            margin-top: 1rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .source-text strong { color: #1b1b1b; }
+        
+        .source-text code {
+            background: #e8e8e8;
+            padding: 0.15rem 0.4rem;
+            border-radius: 4px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.9em;
+            color: #005ea2;
+        }
+        
+        .source-text li {
+            margin-left: 1.5rem;
+            margin-bottom: 0.35rem;
+        }
+        
+        .source-text p { margin-bottom: 0.75rem; }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="usa-header">
+        <div class="container">
+            <div class="usa-logo">
+                <img src="static/state-dept-seal.svg" alt="U.S. Department of State" style="height: 50px;">
+                <div class="usa-logo-text">
+                    <a href="index.html" class="site-title">K Fund Search</a>
+                    <span class="site-subtitle">U.S. Department of State</span>
+                </div>
+            </div>
+            <nav class="usa-nav">
+                <a href="index.html">Home</a>
+                <a href="search.html" class="active">Search</a>
+                <a href="allocation.html">Allocation</a>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Hero -->
+    <section class="search-hero">
+        <div class="hero-badge">
+            <span class="dot"></span>
+            RAG-Powered AI Search
+        </div>
+        <h1>Ask About K Fund Guidelines</h1>
+        <p>Get instant answers about K Fund allowability with citations from official regulations. Powered by semantic search and GPT-4.</p>
+    </section>
+
+    <!-- Search Box -->
+    <div class="search-box">
+        <textarea 
+            id="searchInput" 
+            class="search-textarea" 
+            placeholder="Ask a question about K Fund allowability...
+
+Example: Are gifts to foreign ambassadors allowable under K Fund?"
+        ></textarea>
+        <div class="search-actions">
+            <span class="char-count"><span id="charCount">0</span> characters</span>
+            <button class="search-btn" id="searchBtn" onclick="performSearch()">
+                🔍 Search Guidelines
+            </button>
+        </div>
+    </div>
+
+    <!-- Examples -->
+    <div class="examples-section">
+        <div class="examples-label">💡 Try these questions</div>
+        <div class="examples-grid">
+            <button class="example-btn" onclick="setExample('Are gifts to foreign ambassadors allowable under K Fund?')">Gifts to ambassadors</button>
+            <button class="example-btn" onclick="setExample('Can K Fund pay for security at a diplomatic reception?')">Security costs</button>
+            <button class="example-btn" onclick="setExample('How do I prorate expenses for mixed foreign/domestic events?')">Proration rules</button>
+            <button class="example-btn" onclick="setExample('Is entertainment at a State Dinner K Fund allowable?')">Entertainment costs</button>
+            <button class="example-btn" onclick="setExample('What documentation is required for K Fund expenses?')">Documentation requirements</button>
+            <button class="example-btn" onclick="setExample('Can K Fund pay for floral arrangements at diplomatic events?')">Floral arrangements</button>
+        </div>
+    </div>
+
+    <!-- Loading -->
+    <div class="loading-container" id="loadingContainer">
+        <div class="loading-spinner"></div>
+        <div class="loading-text">Searching K Fund guidelines...</div>
+        <div class="loading-steps">
+            <div class="loading-step" id="step1"><span>○</span> Embedding query</div>
+            <div class="loading-step" id="step2"><span>○</span> Searching vector DB</div>
+            <div class="loading-step" id="step3"><span>○</span> Generating answer</div>
+        </div>
+    </div>
+
+    <!-- Results -->
+    <div class="results-container" id="resultsContainer">
+        <div class="answer-card">
+            <div class="answer-header">
+                <div class="answer-title">🤖 AI Answer</div>
+                <div class="confidence-badge" id="confidenceBadge">
+                    <span class="confidence-dot"></span>
+                    <span id="confidenceText">HIGH</span>
+                </div>
+            </div>
+            <div class="answer-body">
+                <div class="answer-text" id="answerText"></div>
+            </div>
+        </div>
+
+        <div class="sources-section">
+            <div class="sources-header">
+                <div class="sources-title">📚 Sources Consulted</div>
+                <span class="sources-count" id="sourcesCount">0 sources</span>
+            </div>
+            <div id="sourcesList"></div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="usa-footer">
+        <div class="container">
+            <p><strong>K Fund Guidelines Search</strong></p>
+            <p>U.S. Department of State | CGFS – K Fund (EDCS) Appropriation</p>
+        </div>
+    </footer>
+
+    <script>
+        const API_URL = window.location.hostname === 'localhost' 
+            ? 'http://localhost:8002/api/v1/query'
+            : '/api/v1/query';
+        
+        const searchInput = document.getElementById('searchInput');
+        const charCount = document.getElementById('charCount');
+        
+        searchInput.addEventListener('input', () => {
+            charCount.textContent = searchInput.value.length;
+        });
+        
+        function setExample(text) {
+            searchInput.value = text;
+            charCount.textContent = text.length;
+            searchInput.focus();
+        }
+        
+        async function performSearch() {
+            const question = searchInput.value.trim();
+            if (!question) { alert('Please enter a question'); return; }
+            
+            document.getElementById('resultsContainer').classList.remove('active');
+            document.getElementById('loadingContainer').classList.add('active');
+            document.getElementById('searchBtn').disabled = true;
+            
+            animateLoadingSteps();
+            
+            try {
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ question, n_results: 5 })
+                });
+                if (!response.ok) throw new Error('Search failed');
+                displayResults(await response.json());
+            } catch (error) {
+                alert('Error: ' + error.message + '\n\nMake sure the API server is running.');
+            } finally {
+                document.getElementById('loadingContainer').classList.remove('active');
+                document.getElementById('searchBtn').disabled = false;
+            }
+        }
+        
+        function animateLoadingSteps() {
+            ['step1', 'step2', 'step3'].forEach((id, i) => {
+                setTimeout(() => {
+                    document.getElementById(id).classList.add('active');
+                    document.getElementById(id).querySelector('span').textContent = '✓';
+                }, i * 600);
+            });
+        }
+        
+        function displayResults(data) {
+            document.getElementById('answerText').innerHTML = formatMarkdown(data.answer);
+            
+            const badge = document.getElementById('confidenceBadge');
+            badge.className = `confidence-badge ${data.confidence}`;
+            document.getElementById('confidenceText').textContent = data.confidence.toUpperCase();
+            
+            document.getElementById('sourcesCount').textContent = `${data.citations.length} sources`;
+            document.getElementById('sourcesList').innerHTML = data.citations.map((c, i) => `
+                <div class="source-item" onclick="toggleSource(this)">
+                    <div class="source-header">
+                        <div class="source-info">
+                            <span class="source-number">${i + 1}</span>
+                            <span class="source-name">${c.source}</span>
+                            <span class="source-type">${c.regulation_type}</span>
+                        </div>
+                        <span class="source-toggle">▼</span>
+                    </div>
+                    <div class="source-content">
+                        <div class="source-text">${formatSourceText(c.matched_text)}</div>
+                    </div>
+                </div>
+            `).join('');
+            
+            document.getElementById('resultsContainer').classList.add('active');
+            document.getElementById('resultsContainer').scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+        
+        function formatMarkdown(text) {
+            return '<p>' + text
+                .replace(/^### (.*?)$/gm, '<h4 class="md-h4">$1</h4>')
+                .replace(/^## (.*?)$/gm, '<h3 class="md-h3">$1</h3>')
+                .replace(/^# (.*?)$/gm, '<h2 class="md-h2">$1</h2>')
+                .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                .replace(/\*(.*?)\*/g, '<em>$1</em>')
+                .replace(/`(.*?)`/g, '<code class="md-code">$1</code>')
+                .replace(/^\d+\.\s+\*\*(.*?)\*\*\s*[-–]\s*(.*?)$/gm, '<div class="md-list-item"><span class="md-list-title">$1</span><span class="md-list-desc">$2</span></div>')
+                .replace(/^\d+\.\s+(.*?)$/gm, '<div class="md-list-item-simple">$1</div>')
+                .replace(/^[-•]\s+(.*?)$/gm, '<div class="md-bullet">$1</div>')
+                .replace(/\n\n/g, '</p><p>')
+                .replace(/\n/g, '<br>') + '</p>';
+        }
+        
+        function formatSourceText(text) {
+            return text
+                .replace(/^### (.*?)$/gm, '<h4>$1</h4>')
+                .replace(/^## (.*?)$/gm, '<h3>$1</h3>')
+                .replace(/^# (.*?)$/gm, '<h2>$1</h2>')
+                .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                .replace(/`(.*?)`/g, '<code>$1</code>')
+                .replace(/^- (.*?)$/gm, '<li>$1</li>')
+                .replace(/\n\n/g, '</p><p>')
+                .replace(/\n/g, '<br>');
+        }
+        
+        function toggleSource(el) { el.classList.toggle('expanded'); }
+        
+        searchInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); performSearch(); }
+        });
+    </script>
+</body>
+</html>

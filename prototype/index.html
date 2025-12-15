@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>K Fund Event Allocation - U.S. Department of State</title>
+    <link rel="stylesheet" href="static/styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Source+Sans+Pro:wght@400;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <!-- Header -->
+    <header class="usa-header">
+        <div class="container">
+            <div class="usa-logo">
+                <img src="static/state-dept-seal.svg" alt="U.S. Department of State" style="height: 85px; margin-right: 1rem;">
+                <img src="static/ba-logo.png" alt="Booz Allen Hamilton" style="height: 85px; margin-right: 1.5rem;">
+                <div class="usa-logo-text">
+                    <a href="index.html" class="site-title">K Fund Event Allocation</a>
+                    <span class="site-subtitle">U.S. Department of State</span>
+                </div>
+            </div>
+            <nav class="usa-nav">
+                <a href="index.html" class="active">Home</a>
+                <a href="search.html">Search Guidelines</a>
+                <a href="allocation.html">Event Allocation</a>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="usa-hero">
+        <div class="container">
+            <h1>K Fund Event Allocation Tool</h1>
+            <p>AI-powered classification of K Fund (EDCS) allowability for State Department representational events. Determine which expenses qualify under 22 U.S.C. § 2671 with confidence and legal citations.</p>
+            <div style="margin-top: 2rem;">
+                <a href="allocation.html" class="usa-button">Start Allocation</a>
+                <a href="search.html" class="usa-button" style="margin-left: 1rem;">Search K Fund Guidelines</a>
+                <a href="#about" class="usa-button usa-button-secondary" style="margin-left: 1rem;">Learn More</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- About Section -->
+    <section id="about" class="usa-section">
+        <div class="container">
+            <h2 style="text-align: center; color: var(--primary); margin-bottom: 2rem; font-size: 2rem;">K Fund Allocation for State Department Events</h2>
+            
+            <div class="usa-alert usa-alert-info">
+                <strong>Purpose:</strong> This tool helps certifying officers and budget staff determine which event expenses are allowable under the K Fund (EDCS - Emergencies in the Diplomatic and Consular Service) appropriation per 22 U.S.C. § 2671 and related authorities.
+            </div>
+
+            <div style="max-width: 900px; margin: 2rem auto; line-height: 1.8;">
+                <h3 style="color: var(--primary); margin-bottom: 1rem;">What is the K Fund?</h3>
+                <p style="margin-bottom: 1.5rem;">
+                    The K Fund, formally known as <strong>Emergencies in the Diplomatic and Consular Service (EDCS)</strong>, is a State Department appropriation authorized under 22 U.S.C. § 2671. It funds representational expenses including official entertainment of foreign dignitaries, gifts to foreign officials, and courtesies extended to foreign visitors in support of U.S. foreign policy objectives.
+                </p>
+
+                <h3 style="color: var(--primary); margin-bottom: 1rem; margin-top: 2rem;">The Challenge</h3>
+                <p style="margin-bottom: 1.5rem;">
+                    Certifying officers must determine which event line items are allowable under K Fund versus other appropriations. This requires analyzing each expense against complex legal authorities including 22 U.S.C. § 2671, 22 U.S.C. § 2694, and GAO guidance. Manual classification is time-consuming and risks appropriations violations.
+                </p>
+
+                <div style="background: var(--base-lightest); padding: 1.5rem; border-radius: 8px; margin-bottom: 1.5rem;">
+                    <h4 style="color: var(--base-darkest); margin-bottom: 0.75rem;">Our AI Solution</h4>
+                    <p style="margin-bottom: 0.5rem;">
+                        This tool automatically classifies event line items by applying K Fund allowability rules:
+                    </p>
+                    <ul style="margin-left: 1.5rem; margin-top: 0.5rem;">
+                        <li>Identifies expenses that are always K Fund allowable (gifts to foreign officials, hospitality)</li>
+                        <li>Flags expenses that are never allowable (security, transportation, capital costs)</li>
+                        <li>Routes unclear items to Legal Adviser for determination</li>
+                        <li>Calculates proration for mixed foreign/domestic events</li>
+                        <li>Provides legal citations for every classification</li>
+                    </ul>
+                </div>
+
+                <h3 style="color: var(--primary); margin-bottom: 1rem; margin-top: 2rem;">Key Features</h3>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem;">
+                    <div>
+                        <h4 style="font-size: 1rem; margin-bottom: 0.5rem;">Classification</h4>
+                        <ul style="margin-left: 1.5rem; font-size: 0.95rem;">
+                            <li>Automatic K Fund allowability determination</li>
+                            <li>Legal authority citations</li>
+                            <li>"Why this is allowable" explanations</li>
+                            <li>Confidence scoring</li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h4 style="font-size: 1rem; margin-bottom: 0.5rem;">Integration</h4>
+                        <ul style="margin-left: 1.5rem; font-size: 0.95rem;">
+                            <li>SharePoint document import</li>
+                            <li>Invoice parsing</li>
+                            <li>Guest list analysis</li>
+                            <li>Report generation</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div style="background: linear-gradient(135deg, var(--primary) 0%, var(--primary-darker) 100%); color: white; padding: 2rem; border-radius: 8px; margin-top: 2rem; text-align: center;">
+                    <h3 style="margin-bottom: 1rem;">Certifying Officer Protection</h3>
+                    <p style="margin-bottom: 0; opacity: 0.95;">
+                        Certifying officers who rely on Legal Adviser determinations are protected under 31 U.S.C. § 3528. This tool documents the legal basis for every classification decision.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- K Fund Categories Section -->
+    <section class="usa-section" style="background-color: white;">
+        <div class="container">
+            <h2 style="text-align: center; color: var(--primary); margin-bottom: 2rem; font-size: 2rem;">K Fund Allowability Categories</h2>
+            
+            <div class="usa-grid">
+                <div class="usa-card">
+                    <div class="usa-card-icon">✅</div>
+                    <h3>Always Allowable</h3>
+                    <p>Gifts to foreign officials, food/beverage for foreign guests, floral arrangements, printed programs and menus.</p>
+                </div>
+                
+                <div class="usa-card">
+                    <div class="usa-card-icon">❌</div>
+                    <h3>Never Allowable</h3>
+                    <p>Security costs, transportation, staff overtime, venue construction, capital improvements.</p>
+                </div>
+                
+                <div class="usa-card">
+                    <div class="usa-card-icon">⚖️</div>
+                    <h3>Requires Analysis</h3>
+                    <p>Photography, entertainment, A/V equipment, décor - depends on purpose and beneficiary.</p>
+                </div>
+                
+                <div class="usa-card">
+                    <div class="usa-card-icon">📊</div>
+                    <h3>Proration</h3>
+                    <p>Mixed events with foreign and domestic guests require proration based on foreign attendance percentage.</p>
+                </div>
+                
+                <div class="usa-card">
+                    <div class="usa-card-icon">📜</div>
+                    <h3>Legal Citations</h3>
+                    <p>Every classification includes specific statutory authority (22 U.S.C. § 2671, § 2694, GAO guidance).</p>
+                </div>
+                
+                <div class="usa-card">
+                    <div class="usa-card-icon">🛡️</div>
+                    <h3>Audit Trail</h3>
+                    <p>Complete documentation of classification rationale for audit and compliance purposes.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Event Types Section -->
+    <section id="use-cases" class="usa-section usa-section-dark">
+        <div class="container">
+            <h2 style="text-align: center; margin-bottom: 2rem; font-size: 2rem;">Supported Event Types</h2>
+            
+            <div class="usa-grid">
+                <div class="usa-card">
+                    <h3>🍽️ State Dinners</h3>
+                    <p>Formal meals hosted by the Secretary of State for foreign officials and dignitaries.</p>
+                </div>
+                
+                <div class="usa-card">
+                    <h3>🥂 Diplomatic Receptions</h3>
+                    <p>Standing receptions to honor foreign visitors or celebrate diplomatic occasions.</p>
+                </div>
+                
+                <div class="usa-card">
+                    <h3>🎭 Cultural Events</h3>
+                    <p>Events showcasing American or foreign culture as part of diplomatic engagement.</p>
+                </div>
+                
+                <div class="usa-card">
+                    <h3>🎖️ Arrival Ceremonies</h3>
+                    <p>Official welcome ceremonies for visiting foreign dignitaries.</p>
+                </div>
+                
+                <div class="usa-card">
+                    <h3>🎁 Gift Presentations</h3>
+                    <p>Formal presentation of gifts to foreign officials per 22 U.S.C. § 2694.</p>
+                </div>
+                
+                <div class="usa-card">
+                    <h3>🤝 Bilateral Meetings</h3>
+                    <p>Working meals and hospitality associated with diplomatic meetings.</p>
+                </div>
+            </div>
+
+            <div style="text-align: center; margin-top: 3rem;">
+                <a href="allocation.html" class="usa-button">Start K Fund Allocation</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Legal Authorities Section -->
+    <section class="usa-section">
+        <div class="container">
+            <h2 style="text-align: center; color: var(--primary); margin-bottom: 2rem; font-size: 2rem;">Legal Authorities</h2>
+            
+            <div style="max-width: 900px; margin: 0 auto;">
+                <div class="usa-grid" style="margin-top: 2rem;">
+                    <div class="usa-card">
+                        <h3 style="color: var(--primary); font-size: 1.2rem;">22 U.S.C. § 2671</h3>
+                        <p>EDCS Authority - Authorizes representational expenses for foreign relations.</p>
+                    </div>
+                    
+                    <div class="usa-card">
+                        <h3 style="color: var(--primary); font-size: 1.2rem;">22 U.S.C. § 2694</h3>
+                        <p>Gift Authority - Requires K Fund for gifts to foreign officials.</p>
+                    </div>
+                    
+                    <div class="usa-card">
+                        <h3 style="color: var(--primary); font-size: 1.2rem;">31 U.S.C. § 1301</h3>
+                        <p>Purpose Statute - Appropriations for intended purposes only.</p>
+                    </div>
+                    
+                    <div class="usa-card">
+                        <h3 style="color: var(--primary); font-size: 1.2rem;">31 U.S.C. § 3528</h3>
+                        <p>Certifying Officer Protection - Protection when relying on legal determinations.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA Section -->
+    <section class="usa-section" style="background: linear-gradient(135deg, var(--primary) 0%, var(--primary-darker) 100%); color: white; text-align: center;">
+        <div class="container">
+            <h2 style="font-size: 2rem; margin-bottom: 1rem;">Ready to Classify Your Event?</h2>
+            <p style="font-size: 1.25rem; margin-bottom: 2rem; opacity: 0.95;">Upload your event documents and get K Fund allowability determinations with legal citations</p>
+            <a href="allocation.html" class="usa-button">Go to Allocation Tool</a>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="usa-footer">
+        <div class="container">
+            <p><strong>K Fund Event Allocation Tool</strong></p>
+            <p>U.S. Department of State | CGFS – K Fund (EDCS) Appropriation</p>
+            <p style="margin-top: 1rem; font-size: 0.9rem;">
+                AI-powered classification for State Department representational events.
+            </p>
+        </div>
+    </footer>
+</body>
+</html>

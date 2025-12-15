@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Compliance Search System</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+        }
+        
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+        
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+        
+        .search-box {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            margin-bottom: 30px;
+        }
+        
+        .input-group {
+            display: flex;
+            gap: 10px;
+        }
+        
+        textarea {
+            flex: 1;
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 16px;
+            font-family: inherit;
+            resize: vertical;
+            min-height: 80px;
+        }
+        
+        textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        button {
+            padding: 15px 30px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        
+        button:hover {
+            background: #5568d3;
+        }
+        
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        
+        .result-box {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            display: none;
+        }
+        
+        .result-box.show {
+            display: block;
+        }
+        
+        .answer {
+            margin-bottom: 25px;
+            line-height: 1.6;
+        }
+        
+        .answer h3 {
+            color: #667eea;
+            margin-bottom: 15px;
+            font-size: 1.3em;
+        }
+        
+        .citations {
+            border-top: 2px solid #f0f0f0;
+            padding-top: 20px;
+        }
+        
+        .citations h4 {
+            color: #666;
+            margin-bottom: 15px;
+            font-size: 1.1em;
+        }
+        
+        .citation {
+            background: #f8f9fa;
+            padding: 12px 15px;
+            border-radius: 6px;
+            margin-bottom: 10px;
+            border-left: 4px solid #667eea;
+        }
+        
+        .citation-source {
+            font-weight: 600;
+            color: #333;
+        }
+        
+        .citation-type {
+            display: inline-block;
+            background: #667eea;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 0.85em;
+            margin-left: 10px;
+        }
+        
+        .confidence {
+            display: inline-block;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            font-weight: 600;
+            margin-top: 10px;
+        }
+        
+        .confidence.high {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .confidence.medium {
+            background: #fff3cd;
+            color: #856404;
+        }
+        
+        .confidence.low {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #667eea;
+        }
+        
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .examples {
+            background: rgba(255,255,255,0.1);
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 15px;
+        }
+        
+        .examples h4 {
+            color: white;
+            margin-bottom: 10px;
+            font-size: 0.9em;
+        }
+        
+        .example-btn {
+            background: rgba(255,255,255,0.2);
+            color: white;
+            border: 1px solid rgba(255,255,255,0.3);
+            padding: 8px 12px;
+            margin: 5px;
+            border-radius: 6px;
+            font-size: 0.85em;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .example-btn:hover {
+            background: rgba(255,255,255,0.3);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔍 Compliance Search System</h1>
+            <p>Ask questions about export control regulations (ITAR, EAR, State Dept policies)</p>
+        </div>
+        
+        <div class="search-box">
+            <div class="input-group">
+                <textarea id="question" placeholder="Enter your compliance question here...
+Example: Do I need a license to export thermal cameras to Mexico?"></textarea>
+                <button onclick="submitQuery()" id="submitBtn">Search</button>
+            </div>
+            
+            <div class="examples">
+                <h4>Try these examples:</h4>
+                <button class="example-btn" onclick="setExample('Do I need a license to export thermal imaging cameras to Mexico?')">Thermal Cameras</button>
+                <button class="example-btn" onclick="setExample('Can I share GPS technical data with a Canadian engineer?')">Canadian Export</button>
+                <button class="example-btn" onclick="setExample('What is the de minimis rule for controlled content?')">De Minimis</button>
+                <button class="example-btn" onclick="setExample('Are night vision devices subject to ITAR?')">Night Vision</button>
+            </div>
+        </div>
+        
+        <div id="loading" class="result-box">
+            <div class="loading">
+                <div class="spinner"></div>
+                <p>Searching regulations and generating answer...</p>
+            </div>
+        </div>
+        
+        <div id="result" class="result-box">
+            <div class="answer">
+                <h3>Answer</h3>
+                <div id="answerText"></div>
+                <span id="confidenceBadge" class="confidence"></span>
+            </div>
+            
+            <div class="citations">
+                <h4>📚 Sources</h4>
+                <div id="citationsList"></div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        const API_URL = 'http://localhost:8002/api/v1/query';
+        
+        function setExample(text) {
+            document.getElementById('question').value = text;
+        }
+        
+        async function submitQuery() {
+            const question = document.getElementById('question').value.trim();
+            
+            if (!question) {
+                alert('Please enter a question');
+                return;
+            }
+            
+            // Show loading
+            document.getElementById('result').classList.remove('show');
+            document.getElementById('loading').classList.add('show');
+            document.getElementById('submitBtn').disabled = true;
+            
+            try {
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ question })
+                });
+                
+                if (!response.ok) {
+                    throw new Error('API request failed');
+                }
+                
+                const data = await response.json();
+                displayResult(data);
+                
+            } catch (error) {
+                alert('Error: ' + error.message + '\n\nMake sure the API server is running:\npython api_server.py');
+            } finally {
+                document.getElementById('loading').classList.remove('show');
+                document.getElementById('submitBtn').disabled = false;
+            }
+        }
+        
+        function displayResult(data) {
+            // Display answer
+            document.getElementById('answerText').innerHTML = data.answer.replace(/\n/g, '<br>');
+            
+            // Display confidence
+            const confidenceBadge = document.getElementById('confidenceBadge');
+            confidenceBadge.textContent = `Confidence: ${data.confidence.toUpperCase()}`;
+            confidenceBadge.className = `confidence ${data.confidence}`;
+            
+            // Display citations
+            const citationsList = document.getElementById('citationsList');
+            citationsList.innerHTML = data.citations.map(citation => `
+                <div class="citation">
+                    <span class="citation-source">${citation.source}</span>
+                    <span class="citation-type">${citation.regulation_type}</span>
+                </div>
+            `).join('');
+            
+            // Show result
+            document.getElementById('result').classList.add('show');
+            document.getElementById('result').scrollIntoView({ behavior: 'smooth' });
+        }
+        
+        // Allow Enter to submit (with Shift+Enter for new line)
+        document.getElementById('question').addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                submitQuery();
+            }
+        });
+    </script>
+</body>
+</html>
