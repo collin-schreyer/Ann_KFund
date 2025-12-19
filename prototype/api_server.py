@@ -168,7 +168,8 @@ class Citation(BaseModel):
     source: str
     regulation_type: str
     relevance_score: float
-    matched_text: str = ""
+    summary: str = ""  # AI-generated summary of why this was matched
+    matched_text: str = ""  # Original text (hidden by default in UI)
 
 class QueryResponse(BaseModel):
     answer: str
@@ -291,7 +292,11 @@ class ClassificationResponse(BaseModel):
     confidence: str
     prorated: bool
     questions: List[str] = []
-    sources_consulted: List[str] = []  # K Fund guidelines used for this classification
+    sources_consulted: List[str] = []
+    payer: str = "Operating Funds"
+    flagged: bool = False
+    flag_reason: str = ""
+    per_person_cost: float = 0.0
 
 class BatchClassifyRequest(BaseModel):
     line_items: List[LineItemRequest]
@@ -399,6 +404,41 @@ Respond in this exact JSON format:
             k_fund_amount = request.cost * foreign_pct if needs_proration else request.cost
         else:
             k_fund_amount = 0
+
+        # Calculate Per-Person Cost
+        per_person = request.cost / request.total_guests if request.total_guests > 0 else 0
+        
+        # Determine Payer and Check Flags
+        payer = "Operating Funds"
+        flagged = False
+        flag_reason = ""
+        
+        item_lower = request.item.lower()
+        
+        # 1. Check Prohibited Items (Personal)
+        prohibited_keywords = ['yacht', 'casino', 'gambling', 'spouse', 'family', 'vacation', 'personal']
+        if any(bad in item_lower for bad in prohibited_keywords):
+            payer = "Personal Funds"
+            flagged = True
+            flag_reason = "Prohibited item detected (e.g., personal/lavish)"
+            result["classification"] = "NOT_ALLOWABLE" # Override AI if it missed it
+            k_fund_amount = 0
+            
+        # 2. Check Allowability for Payer
+        elif result["classification"] == "K_FUND_ALLOWABLE":
+            if needs_proration:
+                payer = "K Fund / Operating (Split)"
+            else:
+                payer = "K Fund (EDCS)"
+        elif result["classification"] == "LEGAL_REVIEW":
+            payer = "Pending Review"
+            
+        # 3. Check Cost Caps (Soft Cap: $150/pp for food/event)
+        if not flagged and per_person > 150:
+            flagged = True
+            flag_reason = f"High per-person cost (${per_person:.2f}). Justification required."
+            if payer == "K Fund (EDCS)":
+                payer = "K Fund (Requires Memo)"
         
         return ClassificationResponse(
             item=request.item,
@@ -411,7 +451,11 @@ Respond in this exact JSON format:
             confidence=result.get("confidence", "medium"),
             prorated=needs_proration and result["classification"] == "K_FUND_ALLOWABLE",
             questions=result.get("questions", []),
-            sources_consulted=list(sources_used)  # Include which K Fund docs were used
+            sources_consulted=list(sources_used),
+            payer=payer,
+            flagged=flagged,
+            flag_reason=flag_reason,
+            per_person_cost=per_person
         )
         
     except Exception as e:
