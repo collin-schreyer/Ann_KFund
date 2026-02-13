@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign In — K Fund Event Allocation</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Source+Sans+Pro:wght@400;600;700&display=swap"
+        rel="stylesheet">
+    <style>
+        *,
+        *::before,
+        *::after {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --state-blue: #002868;
+            --primary: #005ea2;
+            --primary-dark: #1a4480;
+            --primary-darker: #162e51;
+            --accent-warm: #fa9441;
+            --base-lightest: #f0f0f0;
+            --base-lighter: #dfe1e2;
+            --base-dark: #565c65;
+            --base-darkest: #1b1b1b;
+            --white: #ffffff;
+            --error: #d54309;
+            --success: #00a91c;
+        }
+
+        body {
+            font-family: 'Source Sans Pro', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            background: linear-gradient(145deg, var(--state-blue) 0%, var(--primary-dark) 40%, var(--primary-darker) 100%);
+            overflow: hidden;
+        }
+
+        /* Animated background orbs */
+        .bg-orbs {
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: 0;
+            overflow: hidden;
+        }
+
+        .bg-orbs .orb {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(80px);
+            opacity: 0.12;
+            animation: drift 20s ease-in-out infinite alternate;
+        }
+
+        .bg-orbs .orb:nth-child(1) {
+            width: 500px;
+            height: 500px;
+            background: var(--accent-warm);
+            top: -10%;
+            left: -5%;
+            animation-duration: 24s;
+        }
+
+        .bg-orbs .orb:nth-child(2) {
+            width: 400px;
+            height: 400px;
+            background: var(--primary);
+            bottom: -10%;
+            right: -5%;
+            animation-duration: 18s;
+            animation-direction: alternate-reverse;
+        }
+
+        .bg-orbs .orb:nth-child(3) {
+            width: 300px;
+            height: 300px;
+            background: #4ecdc4;
+            top: 50%;
+            left: 60%;
+            animation-duration: 22s;
+        }
+
+        @keyframes drift {
+            0% {
+                transform: translate(0, 0) scale(1);
+            }
+
+            50% {
+                transform: translate(30px, -20px) scale(1.05);
+            }
+
+            100% {
+                transform: translate(-20px, 30px) scale(0.95);
+            }
+        }
+
+        /* Main layout */
+        .login-wrapper {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            z-index: 1;
+            padding: 2rem;
+        }
+
+        .login-card {
+            width: 100%;
+            max-width: 440px;
+            background: rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 20px;
+            padding: 3rem 2.5rem;
+            box-shadow: 0 25px 60px rgba(0, 0, 0, 0.35);
+            animation: cardIn 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+            opacity: 0;
+            transform: translateY(30px) scale(0.97);
+        }
+
+        @keyframes cardIn {
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        /* Branding */
+        .login-branding {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .login-logos {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 1rem;
+            margin-bottom: 1.25rem;
+        }
+
+        .login-logos img {
+            height: 56px;
+            filter: brightness(0) invert(1);
+            opacity: 0.9;
+        }
+
+        .login-branding h1 {
+            font-size: 1.45rem;
+            font-weight: 700;
+            color: var(--white);
+            line-height: 1.3;
+        }
+
+        .login-branding .login-subtitle {
+            font-size: 0.9rem;
+            color: rgba(255, 255, 255, 0.6);
+            margin-top: 0.35rem;
+        }
+
+        /* Divider */
+        .login-divider {
+            height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            margin: 1.5rem 0;
+        }
+
+        /* Form */
+        .login-form label {
+            display: block;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: rgba(255, 255, 255, 0.75);
+            margin-bottom: 0.4rem;
+            text-transform: uppercase;
+            letter-spacing: 0.6px;
+        }
+
+        .login-form .input-group {
+            position: relative;
+            margin-bottom: 1.25rem;
+        }
+
+        .login-form .input-icon {
+            position: absolute;
+            left: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: rgba(255, 255, 255, 0.4);
+            font-size: 1rem;
+            pointer-events: none;
+        }
+
+        .login-form input {
+            width: 100%;
+            padding: 0.85rem 0.85rem 0.85rem 2.75rem;
+            background: rgba(255, 255, 255, 0.07);
+            border: 1.5px solid rgba(255, 255, 255, 0.15);
+            border-radius: 10px;
+            font-size: 1rem;
+            font-family: inherit;
+            color: var(--white);
+            outline: none;
+            transition: border-color 0.25s, background 0.25s, box-shadow 0.25s;
+        }
+
+        .login-form input::placeholder {
+            color: rgba(255, 255, 255, 0.35);
+        }
+
+        .login-form input:focus {
+            border-color: var(--accent-warm);
+            background: rgba(255, 255, 255, 0.12);
+            box-shadow: 0 0 0 3px rgba(250, 148, 65, 0.15);
+        }
+
+        /* Submit */
+        .login-submit {
+            width: 100%;
+            padding: 0.9rem;
+            background: linear-gradient(135deg, var(--accent-warm) 0%, #f2850a 100%);
+            color: var(--base-darkest);
+            font-family: inherit;
+            font-size: 1.05rem;
+            font-weight: 700;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s, opacity 0.2s;
+            margin-top: 0.5rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .login-submit:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(250, 148, 65, 0.35);
+        }
+
+        .login-submit:active:not(:disabled) {
+            transform: translateY(0);
+        }
+
+        .login-submit:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+        }
+
+        .login-submit .spinner {
+            display: none;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(27, 27, 27, 0.25);
+            border-top-color: var(--base-darkest);
+            border-radius: 50%;
+            animation: spin 0.6s linear infinite;
+            margin: 0 auto;
+        }
+
+        .login-submit.loading .btn-text {
+            display: none;
+        }
+
+        .login-submit.loading .spinner {
+            display: block;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* Error */
+        .login-error {
+            display: none;
+            background: rgba(213, 67, 9, 0.15);
+            border: 1px solid rgba(213, 67, 9, 0.3);
+            color: #ff8a65;
+            padding: 0.75rem 1rem;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            margin-top: 1rem;
+            text-align: center;
+            animation: shake 0.4s ease;
+        }
+
+        .login-error.show {
+            display: block;
+        }
+
+        @keyframes shake {
+
+            0%,
+            100% {
+                transform: translateX(0);
+            }
+
+            15%,
+            45%,
+            75% {
+                transform: translateX(-6px);
+            }
+
+            30%,
+            60% {
+                transform: translateX(6px);
+            }
+        }
+
+        /* Footer badge */
+        .login-footer {
+            text-align: center;
+            margin-top: 1.5rem;
+            font-size: 0.78rem;
+            color: rgba(255, 255, 255, 0.35);
+        }
+
+        .login-footer a {
+            color: rgba(255, 255, 255, 0.5);
+            text-decoration: none;
+        }
+
+        /* Responsive */
+        @media (max-width: 500px) {
+            .login-card {
+                padding: 2rem 1.5rem;
+            }
+
+            .login-logos img {
+                height: 40px;
+            }
+
+            .login-branding h1 {
+                font-size: 1.2rem;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="bg-orbs">
+        <div class="orb"></div>
+        <div class="orb"></div>
+        <div class="orb"></div>
+    </div>
+
+    <div class="login-wrapper">
+        <div class="login-card">
+            <div class="login-branding">
+                <div class="login-logos">
+                    <img src="static/ba-logo.png" alt="Bart & Associates">
+                </div>
+                <h1>K Fund Event Allocation</h1>
+                <div class="login-subtitle">U.S. Department of State · Secure Access</div>
+            </div>
+
+            <div class="login-divider"></div>
+
+            <form class="login-form" id="loginForm" autocomplete="off">
+                <div class="input-group">
+                    <label for="username">Username</label>
+                    <span class="input-icon">👤</span>
+                    <input type="text" id="username" name="username" placeholder="Enter username" required autofocus>
+                </div>
+                <div class="input-group">
+                    <label for="password">Password</label>
+                    <span class="input-icon">🔒</span>
+                    <input type="password" id="password" name="password" placeholder="Enter password" required>
+                </div>
+                <button type="submit" class="login-submit" id="submitBtn">
+                    <span class="btn-text">Sign In</span>
+                    <div class="spinner"></div>
+                </button>
+                <div class="login-error" id="loginError">Invalid credentials. Please try again.</div>
+            </form>
+
+            <div class="login-footer">
+                Authorized users only · Protected under 18 U.S.C. § 1030
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const form = document.getElementById('loginForm');
+        const submitBtn = document.getElementById('submitBtn');
+        const errorEl = document.getElementById('loginError');
+
+        // If already authenticated redirect home
+        if (document.cookie.includes('kfund_session=')) {
+            window.location.href = '/';
+        }
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            errorEl.classList.remove('show');
+            submitBtn.classList.add('loading');
+            submitBtn.disabled = true;
+
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+
+            try {
+                const res = await fetch('/api/v1/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, password })
+                });
+
+                if (res.ok) {
+                    // Small delay for UX polish
+                    await new Promise(r => setTimeout(r, 400));
+                    window.location.href = '/';
+                } else {
+                    const data = await res.json();
+                    errorEl.textContent = data.detail || 'Invalid credentials. Please try again.';
+                    errorEl.classList.add('show');
+                }
+            } catch (err) {
+                errorEl.textContent = 'Connection error. Please try again.';
+                errorEl.classList.add('show');
+            } finally {
+                submitBtn.classList.remove('loading');
+                submitBtn.disabled = false;
+            }
+        });
+    </script>
+</body>
+
+</html>

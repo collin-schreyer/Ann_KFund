@@ -6,38 +6,58 @@ Provides REST API for querying K Fund regulations.
 
 import os
 import secrets
+import hashlib
+import time
 from pathlib import Path
 from contextlib import asynccontextmanager
-from fastapi import FastAPI, HTTPException, Depends, status
+from fastapi import FastAPI, HTTPException, Depends, status, Request, Cookie, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse, HTMLResponse
-from fastapi.security import HTTPBasic, HTTPBasicCredentials
+from fastapi.responses import FileResponse, HTMLResponse, RedirectResponse, JSONResponse
 from pydantic import BaseModel
 import chromadb
 from openai import OpenAI
 from dotenv import load_dotenv
-from typing import List, Dict
+from typing import List, Dict, Optional
 
 load_dotenv()
 
-# Basic Auth
-security = HTTPBasic()
+# Session-based Auth
 AUTH_USER = os.getenv("AUTH_USER", "admin")
 AUTH_PASS = os.getenv("AUTH_PASS", "BAdos2025!")
+SESSION_SECRET = os.getenv("SESSION_SECRET", "kfund-session-secret-2025")
+
+# In-memory session store (token -> expiry timestamp)
+active_sessions: Dict[str, float] = {}
+SESSION_TTL = 60 * 60 * 8  # 8 hours
 
 
-def verify_credentials(credentials: HTTPBasicCredentials = Depends(security)):
-    """Verify basic auth credentials."""
-    correct_user = secrets.compare_digest(credentials.username, AUTH_USER)
-    correct_pass = secrets.compare_digest(credentials.password, AUTH_PASS)
-    if not (correct_user and correct_pass):
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid credentials",
-            headers={"WWW-Authenticate": "Basic"},
-        )
-    return credentials.username
+def _generate_session_token() -> str:
+    """Generate a secure random session token."""
+    raw = secrets.token_hex(32)
+    return hashlib.sha256(f"{raw}{SESSION_SECRET}".encode()).hexdigest()
+
+
+def verify_session(request: Request) -> str:
+    """Verify session cookie is valid. Returns username or raises."""
+    token = request.cookies.get("kfund_session")
+    if not token or token not in active_sessions:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Not authenticated")
+    if time.time() > active_sessions[token]:
+        del active_sessions[token]
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Session expired")
+    return AUTH_USER
+
+
+def require_login_or_redirect(request: Request) -> Optional[str]:
+    """Check session cookie; redirect to /login if missing."""
+    token = request.cookies.get("kfund_session")
+    if not token or token not in active_sessions:
+        return None
+    if time.time() > active_sessions[token]:
+        del active_sessions[token]
+        return None
+    return AUTH_USER
 
 # Initialize clients
 openai_client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
@@ -176,9 +196,61 @@ class QueryResponse(BaseModel):
     citations: List[Citation]
     confidence: str
 
+# ─── Auth Endpoints ───────────────────────────────────────────────
+
+class LoginRequest(BaseModel):
+    username: str
+    password: str
+
+
+@app.post("/api/v1/login")
+def login(body: LoginRequest, response: Response):
+    """Authenticate and set session cookie."""
+    correct_user = secrets.compare_digest(body.username, AUTH_USER)
+    correct_pass = secrets.compare_digest(body.password, AUTH_PASS)
+    if not (correct_user and correct_pass):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid username or password",
+        )
+    token = _generate_session_token()
+    active_sessions[token] = time.time() + SESSION_TTL
+    response.set_cookie(
+        key="kfund_session",
+        value=token,
+        httponly=True,
+        max_age=SESSION_TTL,
+        samesite="lax",
+        path="/",
+    )
+    return {"status": "ok", "message": "Authenticated"}
+
+
+@app.get("/api/v1/logout")
+def logout(request: Request):
+    """Clear session and redirect to login."""
+    token = request.cookies.get("kfund_session")
+    if token and token in active_sessions:
+        del active_sessions[token]
+    resp = RedirectResponse(url="/login", status_code=302)
+    resp.delete_cookie("kfund_session", path="/")
+    return resp
+
+
+# ─── Page Routes ──────────────────────────────────────────────────
+
+@app.get("/login")
+def serve_login():
+    """Serve the login page (public)."""
+    return FileResponse(Path(__file__).parent / "login.html")
+
+
 @app.get("/")
-def root(username: str = Depends(verify_credentials)):
-    """Serve the main index.html page."""
+def root(request: Request):
+    """Serve the main index.html page (protected)."""
+    user = require_login_or_redirect(request)
+    if not user:
+        return RedirectResponse(url="/login", status_code=302)
     index_path = Path(__file__).parent / "index.html"
     if index_path.exists():
         return FileResponse(index_path)
@@ -516,17 +588,26 @@ static_path = Path(__file__).parent / "static"
 if static_path.exists():
     app.mount("/static", StaticFiles(directory=str(static_path)), name="static")
 
-# Serve HTML pages (protected)
+# Serve HTML pages (protected - redirect to /login if no session)
 @app.get("/index.html")
-def serve_index(username: str = Depends(verify_credentials)):
+def serve_index(request: Request):
+    user = require_login_or_redirect(request)
+    if not user:
+        return RedirectResponse(url="/login", status_code=302)
     return FileResponse(Path(__file__).parent / "index.html")
 
 @app.get("/search.html")
-def serve_search(username: str = Depends(verify_credentials)):
+def serve_search(request: Request):
+    user = require_login_or_redirect(request)
+    if not user:
+        return RedirectResponse(url="/login", status_code=302)
     return FileResponse(Path(__file__).parent / "search.html")
 
 @app.get("/allocation.html")
-def serve_allocation(username: str = Depends(verify_credentials)):
+def serve_allocation(request: Request):
+    user = require_login_or_redirect(request)
+    if not user:
+        return RedirectResponse(url="/login", status_code=302)
     return FileResponse(Path(__file__).parent / "allocation.html")
 
 
