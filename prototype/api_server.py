@@ -8,10 +8,10 @@ import os
 import secrets
 import hashlib
 import time
+import logging
 from pathlib import Path
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, HTTPException, Depends, status, Request, Cookie, Response
-from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse, HTMLResponse, RedirectResponse, JSONResponse
 from pydantic import BaseModel
@@ -24,8 +24,8 @@ load_dotenv()
 
 # Session-based Auth
 AUTH_USER = os.getenv("AUTH_USER", "admin")
-AUTH_PASS = os.getenv("AUTH_PASS", "BAdos2025!")
-SESSION_SECRET = os.getenv("SESSION_SECRET", "kfund-session-secret-2025")
+AUTH_PASS = os.getenv("AUTH_PASS")
+SESSION_SECRET = os.getenv("SESSION_SECRET", secrets.token_hex(32))
 
 # In-memory session store (token -> expiry timestamp)
 active_sessions: Dict[str, float] = {}
@@ -165,6 +165,8 @@ def auto_ingest_if_empty():
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Startup and shutdown events."""
+    if not AUTH_PASS or AUTH_PASS == "BAdos2025!":
+        raise RuntimeError("Set AUTH_PASS to a new, strong password before starting the service")
     auto_ingest_if_empty()
     yield
 
@@ -172,13 +174,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(title="K Fund Allocation API", version="1.0.0", lifespan=lifespan)
 
 # Enable CORS
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+# The frontend and API are served from the same origin.
 
 class QueryRequest(BaseModel):
     question: str
@@ -219,6 +215,7 @@ def login(body: LoginRequest, response: Response):
         key="kfund_session",
         value=token,
         httponly=True,
+        secure=os.getenv("RENDER") == "true",
         max_age=SESSION_TTL,
         samesite="lax",
         path="/",
@@ -280,7 +277,7 @@ def get_embedding(text: str) -> List[float]:
     )
     return response.data[0].embedding
 
-@app.post("/api/v1/query", response_model=QueryResponse)
+@app.post("/api/v1/query", response_model=QueryResponse, dependencies=[Depends(verify_session)])
 def query_compliance(request: QueryRequest):
     """
     Submit a compliance question and get an answer with citations.
@@ -344,8 +341,9 @@ End with a confidence level: HIGH, MEDIUM, or LOW."""
             confidence=confidence
         )
         
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+    except Exception:
+        logging.exception("K Fund query failed")
+        raise HTTPException(status_code=502, detail="The search service could not complete the request. Check the server configuration and logs.")
 
 class LineItemRequest(BaseModel):
     item: str
@@ -384,7 +382,7 @@ class BatchClassifyResponse(BaseModel):
     line_items: List[ClassificationResponse]
     totals: Dict[str, float]
 
-@app.post("/api/v1/classify", response_model=ClassificationResponse)
+@app.post("/api/v1/classify", response_model=ClassificationResponse, dependencies=[Depends(verify_session)])
 def classify_line_item(request: LineItemRequest):
     """
     Classify a single line item for K Fund allowability using RAG.
@@ -530,10 +528,11 @@ Respond in this exact JSON format:
             per_person_cost=per_person
         )
         
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+    except Exception:
+        logging.exception("K Fund classification failed")
+        raise HTTPException(status_code=502, detail="The classification service could not complete the request. Check the server configuration and logs.")
 
-@app.post("/api/v1/classify-batch", response_model=BatchClassifyResponse)
+@app.post("/api/v1/classify-batch", response_model=BatchClassifyResponse, dependencies=[Depends(verify_session)])
 def classify_batch(request: BatchClassifyRequest):
     """
     Classify multiple line items for K Fund allowability.
