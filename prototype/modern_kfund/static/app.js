@@ -151,13 +151,21 @@ async function extractFiles(files){
     status.textContent=(items.length?`${items.length} draft line item${items.length===1?'':'s'} added. Review each amount against the document.`:'No line items were extracted. Enter them manually or try a clearer document.')+(warnings.length?' '+warnings.join(' '):'')+(result.note?' '+result.note:'');
   }catch(e){if(reviewGeneration===extractionGeneration){status.textContent='';showError('#receipt-error',e.message)}}finally{receiptPending=false;updateAsyncControls()}
 }
+async function fetchSample(path){
+  const res=await fetch(path);
+  // Sample assets are never HTML. A redirected login page means the cloud
+  // session expired; keep the current form intact so the user can choose when to reload.
+  if(res.status===401 || (res.redirected && new URL(res.url,window.location.href).pathname==='/login') || (res.headers.get('content-type')||'').toLowerCase().includes('text/html')) throw new Error('Your session expired. Reload and sign in again.');
+  if(!res.ok)throw new Error('Sample document is unavailable.');
+  return res;
+}
 $('#extract-receipts').addEventListener('click',()=>extractFiles([...$('#receipt-files').files]));
 document.addEventListener('click',async e=>{
   const button=e.target.closest('[data-sample-path]');if(!button)return;
-  try{const path=button.dataset.samplePath;const res=await fetch(path);if(!res.ok)throw new Error('Sample document is unavailable.');const blob=await res.blob();const mime=blob.type.split(';')[0].toLowerCase();if(!['application/pdf','image/png','image/jpeg','image/webp'].includes(mime))throw new Error('Sample document has an unsupported file type.');await extractFiles([new File([blob],path.split('/').pop(),{type:mime})])}catch(err){showError('#receipt-error',err.message)}
+  try{const path=button.dataset.samplePath;const res=await fetchSample(path);const blob=await res.blob();const mime=blob.type.split(';')[0].toLowerCase();if(!['application/pdf','image/png','image/jpeg','image/webp'].includes(mime))throw new Error('Sample document has an unsupported file type.');await extractFiles([new File([blob],path.split('/').pop(),{type:mime})])}catch(err){showError('#receipt-error',err.message)}
 });
 $('#sample-receipt').addEventListener('click',async()=>{
-  try{const res=await fetch('/sample-receipt.svg');if(!res.ok)throw new Error('Sample receipt is unavailable.');const svg=await res.blob(),url=URL.createObjectURL(svg),img=new Image();
+  try{const res=await fetchSample('/sample-receipt.svg');const svg=await res.blob(),url=URL.createObjectURL(svg),img=new Image();
     try{await new Promise((resolve,reject)=>{img.onload=resolve;img.onerror=()=>reject(new Error('Could not load sample receipt.'));img.src=url});const canvas=document.createElement('canvas');canvas.width=img.naturalWidth;canvas.height=img.naturalHeight;canvas.getContext('2d').drawImage(img,0,0);const blob=await new Promise(resolve=>canvas.toBlob(resolve,'image/png'));if(!blob)throw new Error('Could not prepare sample receipt.');await extractFiles([new File([blob],'fictional-sample-receipt.png',{type:'image/png'})])}finally{URL.revokeObjectURL(url)}
   }catch(e){showError('#receipt-error',e.message)}
 });
