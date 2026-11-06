@@ -307,12 +307,13 @@ Cite specific authorities (22 U.S.C. § 2671, 22 U.S.C. § 2694, GAO guidance, e
 End with a confidence level: HIGH, MEDIUM, or LOW."""
 
         response = openai_client.chat.completions.create(
-            model=os.getenv("LLM_MODEL", "gpt-5.2-chat-latest"),
+            model=os.getenv("LLM_MODEL", "gpt-6.1-sol"),
             messages=[
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": f"Question: {request.question}\n\nRegulations:\n{context}"}
             ],
-            max_completion_tokens=2000
+            max_completion_tokens=25000,
+            reasoning_effort="high"
         )
         
         answer_text = response.choices[0].message.content
@@ -456,12 +457,13 @@ Respond in this exact JSON format:
 }"""
 
         response = openai_client.chat.completions.create(
-            model=os.getenv("LLM_MODEL", "gpt-5.2-chat-latest"),
+            model=os.getenv("LLM_MODEL", "gpt-6.1-sol"),
             messages=[
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": f"Line item: {request.item}\nCost: ${request.cost}\nForeign guests: {request.foreign_guests}/{request.total_guests}\n\nK Fund Guidelines:\n{context}"}
             ],
-            max_completion_tokens=1000,
+            max_completion_tokens=25000,
+            reasoning_effort="high",
             response_format={"type": "json_object"}
         )
         
