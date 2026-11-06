@@ -63,8 +63,20 @@ function renderEvidenceMarkdown(value){
 }
 const money=x=>new Intl.NumberFormat('en-US',{style:'currency',currency:'USD'}).format(Number(x)||0);
 let currentReview=null,sourceCache=[],reviewStep=1,reviewSnapshot=null,analysisPending=false,receiptPending=false,reviewGeneration=0,deploymentMode='unknown';
+function hideExtractionToast(){$('#extraction-toast').hidden=true}
+function showExtractionToast(state,title,message,canView=false){
+  if(!$('#page-review').classList.contains('active')||reviewStep!==2)return;
+  const toast=$('#extraction-toast');toast.dataset.state=state;
+  $('#extraction-toast-title').textContent=title;$('#extraction-toast-message').textContent=message;
+  $('#extraction-toast-view').hidden=!canView;toast.hidden=false;
+}
+$('#extraction-toast-close').addEventListener('click',hideExtractionToast);
+$('#extraction-toast-view').addEventListener('click',()=>{
+  const target=$('#expense-items-title');hideExtractionToast();
+  target.scrollIntoView({behavior:'smooth',block:'start'});target.focus({preventScroll:true});
+});
 const titles={overview:'Overview',review:'Event review',search:'Guidance search',sources:'Source library'};
-function go(page){$$('.page').forEach(el=>el.classList.toggle('active',el.id===`page-${page}`));$$('.nav').forEach(el=>{const selected=el.dataset.page===page;el.classList.toggle('active',selected);if(selected)el.setAttribute('aria-current','page');else el.removeAttribute('aria-current')});$('#breadcrumb').textContent=titles[page];window.scrollTo({top:0,behavior:'smooth'});if(page==='sources')loadSources();if(page==='overview')loadCases()}
+function go(page){if(page!=='review')hideExtractionToast();$$('.page').forEach(el=>el.classList.toggle('active',el.id===`page-${page}`));$$('.nav').forEach(el=>{const selected=el.dataset.page===page;el.classList.toggle('active',selected);if(selected)el.setAttribute('aria-current','page');else el.removeAttribute('aria-current')});$('#breadcrumb').textContent=titles[page];window.scrollTo({top:0,behavior:'smooth'});if(page==='sources')loadSources();if(page==='overview')loadCases()}
 $$('[data-page]').forEach(el=>el.addEventListener('click',()=>go(el.dataset.page))); $$('[data-go]').forEach(el=>el.addEventListener('click',()=>go(el.dataset.go)));
 async function api(url,options={}){const r=await fetch(url,{headers:{'Content-Type':'application/json'},...options});let data;try{data=await r.json()}catch{throw new Error('The local service returned an unexpected response.')}if(!r.ok)throw new Error(typeof data.detail==='string'?data.detail:JSON.stringify(data.detail||'Request failed'));return data}
 async function status(){try{const d=await api('/api/status');deploymentMode=d.deployment_mode==='cloud'?'cloud':'local';const cloud=deploymentMode==='cloud';$('#workspace-label').textContent=cloud?'Shared demo workspace':'Local workspace';$('#workspace-location').textContent=cloud?'Hosted on Render':'Running on this computer';$('#prototype-label').textContent=cloud?'CLOUD DEMO':'LOCAL PROTOTYPE';$('#footer-environment').textContent=(cloud?'Shared cloud demo':'Local prototype')+' · Sample sources · Human review required';$('#search-privacy').textContent='Your question, recent conversation, and relevant source excerpts are sent to OpenAI. '+(cloud?'Saved reviews are shared with demo users and may disappear after a restart.':'Saved reviews remain on this computer.');$('#cloud-notice').hidden=!cloud;$('#sign-out').hidden=!cloud;$('#service-status').textContent=d.configured?(cloud?'Cloud demo ready':'Local service ready'):'OpenAI key needed';$('.status-dot').style.background=d.configured?'#78cda7':'#dfa54f'}catch{$('#service-status').textContent='Service unavailable';$('.status-dot').style.background='#d47b6e'}}
@@ -83,6 +95,7 @@ function refreshReturnControl(){
   status.textContent=!hasResult?'':unchanged?'Your previous results and reviewer decisions are available.':'The inputs have changed. Reanalysis replaces the previous draft and reviewer decisions. Restore the previous inputs to view or save those decisions first.';
 }
 function setReviewStep(step,{scroll=true}={}){
+  if(step!==2)hideExtractionToast();
   reviewStep=step;
   $$('.workflow-step').forEach(el=>el.hidden=Number(el.dataset.step)!==step);
   $$('[data-progress-step]').forEach(el=>{const n=Number(el.dataset.progressStep);el.classList.toggle('is-current',n===step);el.classList.toggle('is-complete',n<step);if(n===step)el.setAttribute('aria-current','step');else el.removeAttribute('aria-current')});
@@ -111,6 +124,7 @@ reviewForm.addEventListener('input',refreshReturnControl);reviewForm.addEventLis
 setReviewStep(1,{scroll:false});
 // A complete, fictional scenario that can be explored without entering real event data.
 function loadExample(){
+  hideExtractionToast();
   reviewGeneration++;
   $('#event-name').value='Sample: Reception for visiting delegates';
   $('#requester').value='Sample: EDCS';
@@ -137,11 +151,13 @@ function updateAsyncControls(){const busy=analysisPending||receiptPending;$('#ex
 async function extractFiles(files){
   const status=$('#receipt-status'), error=$('#receipt-error');
   error.hidden=true;
-  if(analysisPending||receiptPending){showError('#receipt-error','Wait for the current task to finish.');return}
-  if(!files.length){showError('#receipt-error','Select one or more documents first.');return}
-  if(files.length>5||files.some(f=>f.size>8*1024*1024)){showError('#receipt-error','Select up to five files, no larger than 8 MB each.');return}
-  if(files.some(f=>!['application/pdf','image/png','image/jpeg','image/webp'].includes(f.type))){showError('#receipt-error','Use PDF, PNG, JPEG, or WEBP files.');return}
+  const extractionError=message=>{showError('#receipt-error',message);showExtractionToast('error','Extraction could not start',message)};
+  if(analysisPending||receiptPending){extractionError('Wait for the current task to finish.');return}
+  if(!files.length){extractionError('Select one or more documents first.');return}
+  if(files.length>5||files.some(f=>f.size>8*1024*1024)){extractionError('Select up to five files, no larger than 8 MB each.');return}
+  if(files.some(f=>!['application/pdf','image/png','image/jpeg','image/webp'].includes(f.type))){extractionError('Use PDF, PNG, JPEG, or WEBP files.');return}
   const extractionGeneration=reviewGeneration;receiptPending=true;updateAsyncControls();status.textContent='Extracting draft line items. This may take a moment…';
+  showExtractionToast('loading','Reading receipt…','Extracting draft line items. This may take a moment.');
   try{const payload=await Promise.all(files.map(async file=>({filename:file.name,mime_type:file.type,data_base64:await fileAsBase64(file)})));
     const result=await api('/api/receipts/extract',{method:'POST',body:JSON.stringify({files:payload})});
     if(reviewGeneration!==extractionGeneration)return
@@ -149,7 +165,9 @@ async function extractFiles(files){
     if(items.length){const first=$('.line-entry');if($$('.line-entry').length===1&&!first.querySelector('.item-description').value&&!first.querySelector('.item-amount').value)first.remove();items.forEach(it=>row(it.description,it.amount,it))}
     const warnings=(result.documents||[]).flatMap(d=>(d.warnings||[]).map(w=>`${d.filename}: ${w}`));
     status.textContent=(items.length?`${items.length} draft line item${items.length===1?'':'s'} added. Review each amount against the document.`:'No line items were extracted. Enter them manually or try a clearer document.')+(warnings.length?' '+warnings.join(' '):'')+(result.note?' '+result.note:'');
-  }catch(e){if(reviewGeneration===extractionGeneration){status.textContent='';showError('#receipt-error',e.message)}}finally{receiptPending=false;updateAsyncControls()}
+    if(items.length)showExtractionToast('success','Receipt extraction complete',`${items.length} draft line item${items.length===1?'':'s'} added below. Review the descriptions and amounts against the document.`+(warnings.length?' '+warnings.join(' '):''),true);
+    else showExtractionToast('error','No line items found','Try a clearer document or enter the expenses manually.'+(warnings.length?' '+warnings.join(' '):''));
+  }catch(e){if(reviewGeneration===extractionGeneration){status.textContent='';showError('#receipt-error',e.message);showExtractionToast('error','Receipt extraction failed',e.message)}}finally{receiptPending=false;updateAsyncControls()}
 }
 async function fetchSample(path){
   const res=await fetch(path);
@@ -162,12 +180,14 @@ async function fetchSample(path){
 $('#extract-receipts').addEventListener('click',()=>extractFiles([...$('#receipt-files').files]));
 document.addEventListener('click',async e=>{
   const button=e.target.closest('[data-sample-path]');if(!button)return;
-  try{const path=button.dataset.samplePath;const res=await fetchSample(path);const blob=await res.blob();const mime=blob.type.split(';')[0].toLowerCase();if(!['application/pdf','image/png','image/jpeg','image/webp'].includes(mime))throw new Error('Sample document has an unsupported file type.');await extractFiles([new File([blob],path.split('/').pop(),{type:mime})])}catch(err){showError('#receipt-error',err.message)}
+  const generation=reviewGeneration;showExtractionToast('loading','Preparing sample…','Getting the fictional receipt ready for extraction.');
+  try{const path=button.dataset.samplePath;const res=await fetchSample(path);const blob=await res.blob();const mime=blob.type.split(';')[0].toLowerCase();if(!['application/pdf','image/png','image/jpeg','image/webp'].includes(mime))throw new Error('Sample document has an unsupported file type.');if(generation===reviewGeneration)await extractFiles([new File([blob],path.split('/').pop(),{type:mime})])}catch(err){if(generation===reviewGeneration){showError('#receipt-error',err.message);showExtractionToast('error','Could not open the sample',err.message)}}
 });
 $('#sample-receipt').addEventListener('click',async()=>{
+  const generation=reviewGeneration;showExtractionToast('loading','Preparing sample…','Getting the fictional receipt ready for extraction.');
   try{const res=await fetchSample('/sample-receipt.svg');const svg=await res.blob(),url=URL.createObjectURL(svg),img=new Image();
-    try{await new Promise((resolve,reject)=>{img.onload=resolve;img.onerror=()=>reject(new Error('Could not load sample receipt.'));img.src=url});const canvas=document.createElement('canvas');canvas.width=img.naturalWidth;canvas.height=img.naturalHeight;canvas.getContext('2d').drawImage(img,0,0);const blob=await new Promise(resolve=>canvas.toBlob(resolve,'image/png'));if(!blob)throw new Error('Could not prepare sample receipt.');await extractFiles([new File([blob],'fictional-sample-receipt.png',{type:'image/png'})])}finally{URL.revokeObjectURL(url)}
-  }catch(e){showError('#receipt-error',e.message)}
+    try{await new Promise((resolve,reject)=>{img.onload=resolve;img.onerror=()=>reject(new Error('Could not load sample receipt.'));img.src=url});const canvas=document.createElement('canvas');canvas.width=img.naturalWidth;canvas.height=img.naturalHeight;canvas.getContext('2d').drawImage(img,0,0);const blob=await new Promise(resolve=>canvas.toBlob(resolve,'image/png'));if(!blob)throw new Error('Could not prepare sample receipt.');if(generation===reviewGeneration)await extractFiles([new File([blob],'fictional-sample-receipt.png',{type:'image/png'})])}finally{URL.revokeObjectURL(url)}
+  }catch(e){if(generation===reviewGeneration){showError('#receipt-error',e.message);showExtractionToast('error','Could not open the sample',e.message)}}
 });
 function citations(items){if(!items?.length)return '<p class="results-note">No supporting passages were returned. Verify the source before relying on this assessment.</p>';return `<div class="citations"><div class="eyebrow">SOURCE PASSAGES</div>${items.map(c=>`<details><summary>${escapeHTML(c.title||c.source_id||'Source')}</summary><div class="markdown-content">${renderEvidenceMarkdown(c.excerpt||'')}</div></details>`).join('')}</div>`}
 function classificationLabel(v){return ({K_FUND_ALLOWABLE:'Suggested K Fund',NOT_ALLOWABLE:'Not suggested for K Fund',LEGAL_REVIEW:'Needs review'})[v]||v}
@@ -183,6 +203,7 @@ function exportReview(){
   const url=URL.createObjectURL(new Blob([html],{type:'text/html;charset=utf-8'}));const a=document.createElement('a');a.href=url;a.download='kfund-review-report.html';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
 }
 function loadReview(result,decisions){
+  hideExtractionToast();
   reviewGeneration++;
   $('#event-name').value=result.event_name||'';
   $('#requester').value=result.intake?.requester||'';

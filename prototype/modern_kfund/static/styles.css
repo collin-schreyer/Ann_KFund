@@ -90,3 +90,18 @@ h1{color:#162e51}h2,h3{color:#1b1b1b}.sidebar{background:#002868;color:#fff}.bra
 .markdown-content a:focus-visible{outline:3px solid #2491ff;outline-offset:2px}
 #source-detail .markdown-content{max-height:60vh;overflow:auto;padding-right:12px}
 @media(max-width:680px){.citations summary{padding:12px;font-size:15px}.citations details>.markdown-content{padding:12px}.markdown-content{font-size:15px}}
+
+/* Persistent receipt extraction feedback remains visible while the user scrolls. */
+.extraction-toast{position:fixed;right:24px;bottom:24px;z-index:2000;width:min(390px,calc(100vw - 32px));max-height:calc(100vh - 32px);overflow:auto;background:#fff;border:1px solid #a9aeb1;border-left:6px solid #005ea2;border-radius:4px;box-shadow:0 8px 24px rgba(22,46,81,.22);padding:18px 20px;color:#1b1b1b}
+.extraction-toast[data-state="success"]{border-left-color:#16823a}
+.extraction-toast[data-state="error"]{border-left-color:#b50909}
+.extraction-toast-body strong{display:block;color:#162e51;font-size:17px;line-height:1.35}
+.extraction-toast-body p{margin:6px 0 0;color:#3d4551;font-size:15px;line-height:1.45;overflow-wrap:anywhere}
+.extraction-toast-actions{display:flex;align-items:center;flex-wrap:wrap;gap:8px 14px;margin-top:14px}
+.extraction-toast-actions button{min-height:40px;font:inherit;font-size:14px;font-weight:700;cursor:pointer;border-radius:4px}
+#extraction-toast-view{padding:9px 14px;border:0;background:#005ea2;color:#fff}
+#extraction-toast-view:hover{background:#1a4480}
+#extraction-toast-close{padding:8px 2px;border:0;background:transparent;color:#005ea2;text-decoration:underline;text-underline-offset:2px}
+#extraction-toast-close:hover{color:#1a4480}
+.extraction-toast-actions button:focus-visible{outline:3px solid #2491ff;outline-offset:3px}
+@media(max-width:680px){.extraction-toast{right:12px;bottom:12px;width:calc(100vw - 24px);padding:15px 16px;max-height:calc(100vh - 24px)}.extraction-toast-body strong{font-size:16px}.extraction-toast-body p{font-size:14px}}
