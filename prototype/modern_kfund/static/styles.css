@@ -113,3 +113,5 @@ h1{color:#162e51}h2,h3{color:#1b1b1b}.sidebar{background:#002868;color:#fff}.bra
 .chat-source-status[data-state="available"]{border-left-color:#16823a;background:#ecf3ec;color:#1b1b1b}
 .chat-source-status[data-state="unavailable"]{border-left-color:#b50909;background:#fdf2f2;color:#1b1b1b}
 .source-section-heading{font-size:1.2rem;margin:1.5rem 0 .3rem;color:#162e51}
+
+.case-details{margin:1.3rem 0;padding:1rem;border:1px solid #dfe1e2;border-radius:4px}.case-details summary{cursor:pointer;font-weight:700;color:#005ea2}.case-details[open] summary{margin-bottom:.75rem}
